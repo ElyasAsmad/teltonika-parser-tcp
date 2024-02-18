@@ -7,3 +7,11 @@ Tested on:
 - Teltonika GH5200
 
 Inspired from https://github.com/filipkroca/teltonikaparser/
+
+## Installation
+1. Clone the project.
+2. Run `go get` to install all required dependencies.
+3. To start the server, simply run `go run .`.
+
+## Author
+Elyas Asmad
