@@ -1,4 +1,6 @@
-# Teltonika TCP Server & Parser
+# 🚧 Teltonika TCP Server & Parser
+
+Note: Server is still in development.
 
 This is an implementation of Teltonika IoT devices server with Codec 8 & Codec 8 Extended parser built-in.
 
