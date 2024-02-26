@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net"
@@ -14,6 +15,38 @@ const (
 	CONN_PORT = "4554"
 	CONN_TYPE = "tcp"
 )
+
+// println("Altitude:", decoded.Data[i].Altitude)
+// println("Angle:", decoded.Data[i].Angle)
+// println("EventID:", decoded.Data[i].EventID)
+// println("Lat:", decoded.Data[i].Lat)
+// println("Lng:", decoded.Data[i].Lng)
+// println("Priority:", decoded.Data[i].Priority)
+// println("Speed:", decoded.Data[i].Speed)
+// println("Utime UNIX:", decoded.Data[i].UtimeMs)
+// println("Satellites:", decoded.Data[i].VisSat)
+
+type DeviceData struct {
+	IMEI     string      `json:"imei"`
+	CodecID  string      `json:"codec_id"`
+	NoOfData int         `json:"data_len"`
+	Altitude int         `json:"altitude"`
+	Angle    int         `json:"angle"`
+	EventID  int         `json:"event_id"`
+	Lat      int         `json:"lat"`
+	Lng      int         `json:"lng"`
+	Priority int         `json:"priority"`
+	Speed    int         `json:"speed"`
+	UtimeMs  int         `json:"utime_ms"`
+	VisSat   int         `json:"vis_sat"`
+	Elements []IOElement `json:"elements"`
+}
+
+type IOElement struct {
+	Length int `json:"length"`
+	IOID   int `json:"io_id"`
+	Value  int `json:"value"`
+}
 
 func main() {
 
@@ -87,21 +120,6 @@ func handleRequest(conn net.Conn) {
 				conn.Write(b)
 
 			case 2:
-				// elements, err := parseData(buf, size, imei)
-				// if err != nil {
-				// 	fmt.Println("Error while parsing data", err)
-				// 	break
-				// }
-
-				// for i := 0; i < len(elements); i++ {
-				// 	element := elements[i]
-				// 	err := rc.Insert(&element)
-				// 	if err != nil {
-				// 		fmt.Println("Error inserting element to database", err)
-				// 	}
-				// }
-
-				// conn.Write([]byte{0, 0, 0, uint8(len(elements))})
 
 				decoded, err := DecodeAVL(&buf)
 
@@ -117,12 +135,16 @@ func handleRequest(conn net.Conn) {
 				for i := 0; i < int(decoded.NoOfData); i++ {
 
 					println("Altitude:", decoded.Data[i].Altitude)
-					println("Direction:", decoded.Data[i].Angle)
-					println("Satellites:", decoded.Data[i].VisSat)
-					println("Speed:", decoded.Data[i].Speed)
+					println("Angle:", decoded.Data[i].Angle)
 					println("EventID:", decoded.Data[i].EventID)
 					println("Lat:", decoded.Data[i].Lat)
 					println("Lng:", decoded.Data[i].Lng)
+					println("Priority:", decoded.Data[i].Priority)
+					println("Speed:", decoded.Data[i].Speed)
+					println("Utime UNIX:", decoded.Data[i].UtimeMs)
+					println("Satellites:", decoded.Data[i].VisSat)
+
+					elements := make([]IOElement, len(decoded.Data[i].Elements))
 
 					for j := 0; j < len(decoded.Data[i].Elements); j++ {
 						println("Element ID:", decoded.Data[i].Elements[j].IOID)
@@ -136,7 +158,38 @@ func handleRequest(conn net.Conn) {
 
 						println("Element value:", n.Int64())
 						print("\n")
+
+						elements = append(elements, IOElement{
+							Length: int(decoded.Data[i].Elements[j].Length),
+							IOID:   int(decoded.Data[i].Elements[j].IOID),
+							Value:  int(n.Int64()),
+						})
 					}
+
+					el := DeviceData{
+						IMEI:     imei,
+						CodecID:  hex.EncodeToString([]byte{decoded.CodecID}),
+						NoOfData: int(decoded.NoOfData),
+						Altitude: int(decoded.Data[i].Altitude),
+						Angle:    int(decoded.Data[i].Angle),
+						EventID:  int(decoded.Data[i].EventID),
+						Lat:      int(decoded.Data[i].Lat),
+						Lng:      int(decoded.Data[i].Lng),
+						Priority: int(decoded.Data[i].Priority),
+						Speed:    int(decoded.Data[i].Speed),
+						UtimeMs:  int(decoded.Data[i].UtimeMs),
+						VisSat:   int(decoded.Data[i].VisSat),
+						Elements: elements,
+					}
+
+					jsonData, err := json.Marshal(el)
+
+					if err != nil {
+						fmt.Println("Error while marshaling data", err)
+						break
+					}
+
+					PublishToPubSub(jsonData)
 
 				}
 

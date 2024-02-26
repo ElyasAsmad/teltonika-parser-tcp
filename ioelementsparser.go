@@ -188,7 +188,7 @@ func DecodeElements(bs *[]byte, start int, codecID byte) ([]Element, int, error)
 
 	if totalElementsChecksum != totalElements {
 		//log.Fatalf("Error when counting parsed IO Elements, want %v, got %v", totalElements, totalElementsChecksum)
-		return []Element{}, 0, fmt.Errorf("Error when counting parsed IO Elements, want %v, got %v", totalElements, totalElementsChecksum)
+		return []Element{}, 0, fmt.Errorf("error when counting parsed IO Elements, want %v, got %v", totalElements, totalElementsChecksum)
 	}
 
 	return ElementsBS, nextByte, nil
